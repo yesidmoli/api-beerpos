@@ -15,6 +15,16 @@ class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by('-created_at')
     serializer_class = EventSerializer
 
+    def perform_create(self, serializer):
+        event = serializer.save()
+        # Automatically create the CAVA Central for this event with the initial stock
+        Location.objects.create(
+            name=f"Cava Central - {event.name}",
+            location_type='CAVA',
+            current_stock=event.initial_stock,
+            event=event
+        )
+
     def get_permissions(self):
         # Allow listing events for everyone authenticated (needed for initial load)
         if self.action == 'list':

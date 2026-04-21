@@ -46,7 +46,7 @@ class Location(models.Model):
         ('POS', 'Punto de Venta'),
         ('EXTERNAL', 'Terceros'),
     )
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     location_type = models.CharField(max_length=20, choices=LOCATION_TYPES)
     current_stock = models.IntegerField(default=0)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='locations', null=True, blank=True)
