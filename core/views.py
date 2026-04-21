@@ -304,8 +304,8 @@ class MovementViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         user = request.user
         
-        # Only Admins/Supervisors can edit
-        if not hasattr(user, 'profile') or user.profile.role not in ['admin', 'supervisor']:
+        # Only Admins/Supervisors/Cajeros can edit
+        if not hasattr(user, 'profile') or user.profile.role not in ['admin', 'supervisor', 'cajero']:
             return Response({'error': 'No tienes permisos para editar movimientos'}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
