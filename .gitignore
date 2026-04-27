@@ -1,2 +1,3 @@
 venv
 core/migrations/0005_cashreconciliation_actual_cash_and_more.py
+db.sqlite3
