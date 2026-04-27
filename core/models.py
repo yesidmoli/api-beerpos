@@ -71,6 +71,7 @@ class Movement(models.Model):
     note = models.TextField(null=True, blank=True)
     performed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='movements', null=True, blank=True)
+    payment_method = models.CharField(max_length=20, choices=(('CASH', 'Efectivo'), ('TRANSFER', 'Transferencia')), default='CASH')
 
     def save(self, *args, **kwargs):
         # Only update stocks if this is a new movement (to avoid double counting on updates)
@@ -103,6 +104,12 @@ class CashReconciliation(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     user_name = models.CharField(max_length=100)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='reconciliations', null=True, blank=True)
+    
+    # Segregated amounts
+    expected_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    actual_cash = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    expected_transfer = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    actual_transfer = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return f"Cuadre {self.location.name} - {self.timestamp}"

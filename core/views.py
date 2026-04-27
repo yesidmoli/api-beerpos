@@ -388,6 +388,7 @@ class MovementViewSet(viewsets.ModelViewSet):
                 quantity=qty,
                 event=pos.event,
                 note=data.get('note', ''),
+                payment_method=data.get('payment_method', 'CASH'),
                 performed_by=request.user
             )
             return Response(MovementSerializer(movement).data, status=status.HTTP_201_CREATED)
@@ -424,9 +425,14 @@ class CashReconciliationViewSet(viewsets.ModelViewSet):
         if not location:
             return Response({'error': 'Location not found'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Auto-calculate difference
-        expected = float(data.get('expected_amount', 0))
-        actual = float(data.get('actual_amount', 0))
+        # Auto-calculate totals
+        expected_cash = float(data.get('expected_cash', 0))
+        actual_cash = float(data.get('actual_cash', 0))
+        expected_transfer = float(data.get('expected_transfer', 0))
+        actual_transfer = float(data.get('actual_transfer', 0))
+        
+        expected = expected_cash + expected_transfer
+        actual = actual_cash + actual_transfer
         diff = actual - expected
         
         reconciliation = CashReconciliation.objects.create(
@@ -434,6 +440,10 @@ class CashReconciliationViewSet(viewsets.ModelViewSet):
             expected_amount=expected,
             actual_amount=actual,
             difference=diff,
+            expected_cash=expected_cash,
+            actual_cash=actual_cash,
+            expected_transfer=expected_transfer,
+            actual_transfer=actual_transfer,
             user_name=request.user.username,
             event=location.event
         )
@@ -450,7 +460,7 @@ class CashReconciliationViewSet(viewsets.ModelViewSet):
         if not location:
             return Response({'error': 'Location not found'}, status=status.HTTP_404_NOT_FOUND)
             
-        # Calculate expected based on SALES only
+        # Calculate expected based on SALES and payment method
         sales = Movement.objects.filter(
             from_location=location,
             movement_type='SALE',
@@ -460,9 +470,14 @@ class CashReconciliationViewSet(viewsets.ModelViewSet):
         total_units = sales.aggregate(Sum('quantity'))['quantity__sum'] or 0
         total_expected = sales.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
         
+        expected_cash = sales.filter(payment_method='CASH').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        expected_transfer = sales.filter(payment_method='TRANSFER').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+        
         return Response({
             'location_name': location.name,
             'expected_units': total_units,
             'expected_amount': total_expected,
+            'expected_cash': expected_cash,
+            'expected_transfer': expected_transfer,
             'unit_price': location.event.price_per_unit if location.event else 0
         })
